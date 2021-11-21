@@ -23,11 +23,14 @@
  */
 package jenkins.model;
 
+
+import com.gargoylesoftware.htmlunit.WebWindow;
 import hudson.model.FreeStyleProject;
 import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Queue;
 import hudson.model.StringParameterDefinition;
 import javax.servlet.http.HttpServletResponse;
+import static org.junit.Assert.assertEquals;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -43,24 +46,31 @@ public class ParameterizedJobMixInTest {
     @Rule
     public JenkinsRule j = new JenkinsRule();
     
+    // CS 427 issue link: https://issues.jenkins.io/browse/JENKINS-66894
     @Test
+    @Issue("JENKINS-66894")
     public void doBuild_shouldFailWhenInvokingDisabledProject() throws Exception {
         final FreeStyleProject project = j.createFreeStyleProject();
         project.doDisable();
         
         final JenkinsRule.WebClient webClient = j.createWebClient();
-        webClient.assertFails(project.getUrl() + "build", HttpServletResponse.SC_CONFLICT);
+        WebWindow page = webClient.getCurrentWindow();
+        webClient.goTo(project.getUrl() + "build");
+        assertEquals(page, webClient.getCurrentWindow());
     }
     
+    // CS 427 issue link: https://issues.jenkins.io/browse/JENKINS-66894
     @Test
     @Issue("JENKINS-36193")
     public void doBuildWithParameters_shouldFailWhenInvokingDisabledProject() throws Exception {
         final FreeStyleProject project = j.createFreeStyleProject();
         project.addProperty(new ParametersDefinitionProperty(new StringParameterDefinition("FOO", "BAR")));
         project.doDisable();
-        
+
         final JenkinsRule.WebClient webClient = j.createWebClient();
-        webClient.assertFails(project.getUrl() + "buildWithParameters", HttpServletResponse.SC_CONFLICT);
+        WebWindow page = webClient.getCurrentWindow();
+        webClient.goTo(project.getUrl() + "buildWithParameters");
+        assertEquals(page, webClient.getCurrentWindow());
     }
 
     @Test

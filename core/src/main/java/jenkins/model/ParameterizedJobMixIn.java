@@ -185,7 +185,8 @@ public abstract class ParameterizedJobMixIn<JobT extends Job<JobT, RunT> & Param
     public final boolean isParameterized() {
         return asJob().getProperty(ParametersDefinitionProperty.class) != null;
     }
-
+    
+    // CS 427 issue link: https://issues.jenkins.io/browse/JENKINS-66894
     /**
      * Standard implementation of {@link ParameterizedJob#doBuild}.
      */
@@ -193,6 +194,11 @@ public abstract class ParameterizedJobMixIn<JobT extends Job<JobT, RunT> & Param
     public final void doBuild(StaplerRequest req, StaplerResponse rsp, @QueryParameter TimeDuration delay) throws IOException, ServletException {
         if (delay == null) {
             delay=new TimeDuration(TimeUnit.MILLISECONDS.convert(asJob().getQuietPeriod(), TimeUnit.SECONDS));
+        }
+
+        if (asJob().isDisabled())
+        {
+            throw HttpResponses.forwardToPreviousPage();
         }
 
         if (!asJob().isBuildable()) {
@@ -231,6 +237,11 @@ public abstract class ParameterizedJobMixIn<JobT extends Job<JobT, RunT> & Param
         BuildAuthorizationToken.checkPermission(asJob(), asJob().getAuthToken(), req, rsp);
 
         ParametersDefinitionProperty pp = asJob().getProperty(ParametersDefinitionProperty.class);
+        if (asJob().isDisabled())
+        {
+            throw HttpResponses.forwardToPreviousPage();
+        }
+        
         if (!asJob().isBuildable()) {
             throw HttpResponses.error(SC_CONFLICT, new IOException(asJob().getFullName() + " is not buildable!"));
         }
